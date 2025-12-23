@@ -11,17 +11,20 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdint.h>
+#include <sys/epoll.h>
+
+#define MAX_EVENTS 50
 
 typedef struct {
-    int sock;
+    int sock, efd;
     pthread_t thread;
-    struct sockaddr_in servaddr;
-    struct sockaddr_in cliaddr;
+    struct sockaddr_in servaddr, cliaddr;
+    struct epoll_event ev, events[MAX_EVENTS];
 } HttpServer;
 
 typedef struct {
 	char* path;
-	void (*http_func)(void*);
+	void (*http_func)(int, void*);
 } HTTP_API;
 
 int serverCreate(HttpServer* server);

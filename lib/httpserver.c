@@ -3,7 +3,7 @@
 #define HTTP_PORT 60000
 
 // 메인페이지 path: "/"
-void mainPage(void*);
+void mainPage(int, void*);
 
 HTTP_API getApi[] = {
     "/", mainPage,
@@ -14,10 +14,11 @@ HTTP_API postApi[] = {
     NULL, NULL
 };
 
+//--- private funcs ---
 void* _serverStart(void* sv);
+void parseHttp(char* buf, int csock);
 void* _clnt_connection(void *arg);
 void sendError(FILE* fp);
-
 
 //--- public ---
 
@@ -44,6 +45,22 @@ int serverCreate(HttpServer* server) {
         perror("listen()");
         return 0;
     }
+
+    // epoll 생성
+    if((server->efd = epoll_create1(0)) == -1) {
+        perror("epoll_create");
+        exit(1);
+    }
+
+    // epoll에 서버 소켓 추가
+    server->ev.events = EPOLLIN;
+    server->ev.data.fd = server->sock;
+
+    if(epoll_ctl(server->efd, EPOLL_CTL_ADD, server->sock, &server->ev) == -1) {
+        perror("epoll_ctl");
+        exit(1);
+    }
+
     return 1;
 }
 
@@ -59,24 +76,91 @@ void serverJoin(HttpServer* server) {
 
 void* _serverStart(void* sv) {
     HttpServer* server = (HttpServer*)sv;
-
     pthread_t thread;
+
+    char buf_in[BUFSIZ];
 
     while(1) {
         char mesg[BUFSIZ];
         int csock;
+        
+        // epoll wait를 이용하여 소켓 이벤트 대기
+        int event_count;
+        if((event_count = epoll_wait(server->efd, server->events, MAX_EVENTS, -1))==-1) {
+            perror("epoll_wait");
+        }
 
-        /* 클라이언트의 요청을 기다린다. */
-        uint32_t len = sizeof(server->cliaddr);
-        csock = accept(server->sock, (struct sockaddr*)&server->cliaddr, &len);
+        for (int i = 0; i < event_count; i++) {
+            if(server->events[i].data.fd = server->sock) {
+                /* 클라이언트의 요청을 기다린다. */
+                uint32_t len = sizeof(server->cliaddr);
+                csock = accept(server->sock, (struct sockaddr*)&server->cliaddr, &len);
+        
+                /* 네트워크 주소를 문자열로 변경 */
+                inet_ntop(AF_INET, &server->cliaddr.sin_addr, mesg, BUFSIZ);
+                printf("Client IP : %s:%d\n", mesg, ntohs(server->cliaddr.sin_port));
+        
+                // epoll에 클라이언트 소켓 추가
+                server->ev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+                server->ev.data.fd = csock;
+        
+                if(epoll_ctl(server->efd, EPOLL_CTL_ADD, csock, &server->ev) == -1) {
+                    perror("epoll_ctl");
+                }
+            } else {
+                // epoll 수신 처리
+                if (server->events[i].events & EPOLLIN) {
+                    int readn = read(server->events[i].data.fd, buf_in, BUFSIZ);
 
-        /* 네트워크 주소를 문자열로 변경 */
-        inet_ntop(AF_INET, &server->cliaddr.sin_addr, mesg, BUFSIZ);
-        printf("Client IP : %s:%d\n", mesg, ntohs(server->cliaddr.sin_port));
+                    if (readn <= 0) {
+                        cleanup(server->events[i].data.fd);
+                        continue;
+                    }
 
-        /* 클라이언트의 요청이 들어오면 스레드를 생성하고 클라이언트의 요청을 처리한다. */
-        pthread_create(&thread, NULL, _clnt_connection, &csock);
-        pthread_join(thread, NULL);
+                    buf_in[readn] = '\0';
+                    printf("%s\n", buf_in);
+                    // TODO 읽어온 패킷을 http 파싱 함수로 보낸다
+                    parseHttp(buf_in, server->events[i].data.fd);
+                    continue;
+                } 
+
+                // TODO 잠만 HTTP는 한번 송수신 받고나면 바로 종료하는데?
+                
+                // epoll 에러 또는 종료
+                if (server->events[i].events & (EPOLLRDHUP | EPOLLERR | EPOLLHUP)) {
+                    cleanup(server->events[i].data.fd);
+                    continue;
+                }
+            }
+        }
+
+    }
+}
+
+void parseHttp(char* buf, int csock) {
+    char method[BUFSIZ], type[BUFSIZ];
+    char path[BUFSIZ], *ret;
+
+    /* ' ' 문자로 buf를 구분해서 요청 라인의 내용(메소드)를 분리한다. */
+    ret = strtok(buf, "/ ");
+    strcpy(method, (ret != NULL)?ret:"");
+
+    ret = strtok(NULL, " ");                /* 요청 라인에서 경로(path)를 가져온다. */
+    strcpy(path, (ret != NULL)?ret:"/");
+
+    int i = 0;
+    if(strcmp(method, "POST") == 0) {         /* POST 메소드일 경우를 처리한다. */
+        for(; postApi[i].path != NULL; i++) {
+            if(!strcmp(postApi[i].path, path)) {
+                postApi[i].http_func(csock, NULL);
+            }
+        }
+    } else if(strcmp(method, "GET") == 0) {	/* GET 메소드일 경우를 처리한다. */
+        for(; getApi[i].path != NULL; i++) {
+            if(!strcmp(getApi[i].path, path)) {
+                getApi[i].http_func(csock, NULL);
+            }
+        }
     }
 }
 
@@ -129,8 +213,8 @@ void* _clnt_connection(void *arg) {
     return (void*)NULL;
 }
 
-void mainPage(void* fp) {
-    FILE* clnt_write = fp;
+void mainPage(int csock, void* fp) {
+    FILE* clnt_write = fp;  // TODO 이건 삭제
 
     /* 클라이언트로 보낼 성공에 대한 응답 메시지 */
     char protocol[ ] = "HTTP/1.1 200 OK\r\n";
