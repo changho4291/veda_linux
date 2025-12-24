@@ -1,27 +1,42 @@
 #include "httpserver.h"
+#include "controller.h"
 
 #define HTTP_PORT 60000
 
-// 메인페이지 path: "/"
-void mainPage(int, void*);
+typedef struct {
+	char* path;
+	void (*http_func)(int, HttpRequest*);
+} HTTP_API;
 
 HTTP_API getApi[] = {
-    "/", mainPage,
+    "/led", ledGet,
+    "/cds", cdsGet,
     NULL, NULL
 };
 
 HTTP_API postApi[] = {
+    "/led/on", ledOn,
+    "/led/off", ledOff,
+    "/led/pwm", ledPwm,
+    "/led/cds", ledCds,
+    "/led", ledSet,
+    "/buzz/on", buzzOn,
+    "/buzz/off", buzzOff,
+    "/alaram", alaramSet,
+    NULL, NULL
+};
+
+HTTP_API deleteApi[] = {
+    "/alaram", alaramDelete,
     NULL, NULL
 };
 
 //--- private funcs ---
 void* _serverStart(void* sv);
-void parseHttp(char* buf, int csock, HttpServer* server);
+void parseHttp(char* buf, int csock);
 void* _clnt_connection(void *arg);
-void sendError(FILE* fp);
+void sendError(int csock);
 void cleanup(int efd, int fd);
-void nonblock(int sockfd);
-// void recive()
 
 //--- public ---
 
@@ -104,7 +119,7 @@ void* _serverStart(void* sv) {
                 printf("Client IP : %s:%d\n", mesg, ntohs(server->cliaddr.sin_port));
         
                 // 논블럭 소켓
-                nonblock(csock);
+                // nonblock(csock);
 
                 // epoll에 클라이언트 소켓 추가
                 server->ev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
@@ -130,16 +145,11 @@ void* _serverStart(void* sv) {
                             printf("%s\n", buf_in);
 
                             // 읽어온 패킷을 http 파싱 함수로 보낸다
-                            parseHttp(buf_in, server->events[i].data.fd, server);
-                            break;
-                        } else if (readn == 0) {
-                            cleanup(server->efd, server->events[i].data.fd);
-                            break;
-                        } else  {
-                            if (errno == EAGAIN || errno == EWOULDBLOCK) { break; } // 더 읽을 내용 없음
-                            cleanup(server->efd, server->events[i].data.fd);
-                            break;
+                            parseHttp(buf_in, server->events[i].data.fd);
                         }
+                        
+                        cleanup(server->efd, server->events[i].data.fd);
+                        break;
                     }
                     continue;
                 }
@@ -148,111 +158,87 @@ void* _serverStart(void* sv) {
     }
 }
 
-void nonblock(int sockfd) {
-	int opts;
+void parseHttp(char* buf, int csock) {
+    char head[BUFSIZ];
+    char method[10];
+    char path[2048], *ret;
+    HttpRequest req;
 
-    if((opts=fcntl(sockfd, F_GETFL, 0))==-1) {
-        perror("fcntl");
-        exit(1);
+    char* headEnd = strstr(buf, "\r\n\r\n");
+    if (headEnd) {
+        req.bodySize = headEnd - buf;
+        strncpy(head, buf, headEnd - buf);
+        head[headEnd - buf] = '\0';
+        strcpy(req.body, headEnd + 4);
     }
-    if(fcntl(sockfd, F_SETFL, opts | O_NONBLOCK) ==-1) {
-        perror("fcntl");
-        exit(1);
-    }
-}
-
-// nonblock epoll 이기 때문에 한번의 read로 모든 요청을 받는다는 보장 없음
-void parseHttp(char* buf, int csock, HttpServer* server) {
-    char method[BUFSIZ], type[BUFSIZ];
-    char path[BUFSIZ], *ret;
 
     /* ' ' 문자로 buf를 구분해서 요청 라인의 내용(메소드)를 분리한다. */
-    ret = strtok(buf, "/ ");
+    ret = strtok(head, "/ ");
     strcpy(method, (ret != NULL)?ret:"");
 
     ret = strtok(NULL, " ");                /* 요청 라인에서 경로(path)를 가져온다. */
     strcpy(path, (ret != NULL)?ret:"/");
 
-    int i = 0;
+    // http 버전 확인
+    ret = strtok(NULL, "\r\n"); 
+
+    // http 옵션 파싱
+    ret = strtok(NULL, "\r\n"); 
+    req.optSize = 0;
+    while ( ret != NULL ) {
+        strcpy(req.headOption[req.optSize], ret);
+        ret = strtok(NULL, "\r\n"); 
+        req.optSize++;
+    }
+
+    int i = 0, succ = 0;
     if(strcmp(method, "POST") == 0) {         /* POST 메소드일 경우를 처리한다. */
         for(; postApi[i].path != NULL; i++) {
             if(!strcmp(postApi[i].path, path)) {
-                postApi[i].http_func(csock, NULL);
+                postApi[i].http_func(csock, &req);
+                succ = 1;
             }
         }
     } else if(strcmp(method, "GET") == 0) {	/* GET 메소드일 경우를 처리한다. */
         for(; getApi[i].path != NULL; i++) {
             if(!strcmp(getApi[i].path, path)) {
-                getApi[i].http_func(csock, NULL);
+                getApi[i].http_func(csock, &req);
+                succ = 1;
+            }
+        }
+    } else if(strcmp(method, "DELETE") == 0) {	/* DELETE 메소드일 경우를 처리한다. */
+        for(; deleteApi[i].path != NULL; i++) {
+            if(!strcmp(deleteApi[i].path, path)) {
+                deleteApi[i].http_func(csock, &req);
+                succ = 1;
             }
         }
     }
 
-    // TODO i가 0이면 호출하는게 없다는 의미이므로 오류
-    // if (!i) { sendError(clnt_write); }   /* 에러 메시지를 클라이언트로 보낸다.
-
-    // 송신이 끝나면 소켓을 닫는다.
-    cleanup(server->efd, csock);
+    // i가 0이면 호출하는게 없다는 의미이므로 오류
+    if (!succ) { sendError(csock); }   /* 에러 메시지를 클라이언트로 보낸다. */
 }
 
 void cleanup(int efd, int fd) {
     epoll_ctl(efd, EPOLL_CTL_DEL, fd, NULL);  // epoll 제거
     close(fd);                                // fd 종료
-    // remove_connection(fd);                    // 내부 자료구조 정리
 }
 
-void mainPage(int csock, void* arg) {
-
-    /* 클라이언트로 보낼 성공에 대한 응답 메시지 */
-    char protocol[ ] = "HTTP/1.1 200 OK\r\n";
-    char server[ ] = "Server:Netscape-Enterprise/6.0\r\n";
-    char cnt_type[ ] = "Content-Type:text/html\r\n";
-    char end[ ] = "\r\n";
-    char body[BUFSIZ];
-    sprintf(body, 
-    "<html>"
-            "<head>"
-                "<title>Hello World</title>"
-            "</head>"
-            "<body>"
-                "<h1>Sensor</h1>"
-                "<p>CTS: <span id=\"cds\">%.3f</span></p>"
-                "<p>Temperature: <span id=\"temp\">%.3f</span></p>"
-                "<p>Potentiometer: <span id=\"vr\">%.3f</span></p>"
-
-                "<h2>LED Control</h2>"
-                "<form action=\"index.html\" method=\"GET\" \"onSubmit=\"document.reload()\"><table>"
-                    "<button type=\"submit\" name=\"state\">LED ON</button>"
-                    "<button type=\"submit\" name=\"state\">LED OFF</button>"
-                "</form>"
-            "</body>"
-            "</html>"
-    , 0.1, 0.1, 0.1);
-
-    send(csock, protocol, strlen(protocol), 0);
-    send(csock, server, strlen(server), 0);
-    send(csock, cnt_type, strlen(cnt_type), 0);
-    send(csock, end, strlen(end), 0);
-    send(csock, body, strlen(body), 0);
-}
-
-void sendError(FILE* fp) {
+void sendError(int csock) {
     /* 클라이언트로 보낼 실패에 대한 HTTP 응답 메시지 */
-    char protocol[ ] = "HTTP/1.1 400 Bad Request\r\n";
+    char protocol[ ] = "HTTP/1.1 404 Not Found\r\n";
     char server[ ] = "Server: Netscape-Enterprise/6.0\r\n";
-    char cnt_len[ ] = "Content-Length:1024\r\n";
+    // char cnt_len[ ] = "Content-Length:1024\r\n";
     char cnt_type[ ] = "Content-Type:text/html\r\n\r\n";
 
     /* 화면에 표시될 HTML의 내용 */
-    char content1[ ] = "<html><head><title>BAD Connection</title></head>";
-    char content2[ ] = "<body><font size=+5>Bad Request</font></body></html>";
-    printf("send_error\n");
+    char content1[ ] = "<html><head><title>Content Not Found</title></head>";
+    char content2[ ] = "<body><font size=+5>Content Not Found</font></body></html>";
 
-    fputs(protocol, fp);
-    fputs(server, fp);
-    fputs(cnt_len, fp);
-    fputs(cnt_type, fp);
-    fputs(content1, fp);
-    fputs(content2, fp);
-    fflush(fp);
+    send(csock, protocol, strlen(protocol), 0);
+    send(csock, server, strlen(server), 0);
+    // send(csock, cnt_len, strlen(cnt_len), 0);
+    send(csock, cnt_type, strlen(cnt_type), 0);
+    send(csock, content1, strlen(content1), 0);
+    send(csock, content2, strlen(content2), 0);
 }

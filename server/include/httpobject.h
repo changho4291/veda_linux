@@ -1,5 +1,5 @@
-#ifndef __HTTPSERVER_H__
-#define __HTTPSERVER_H__
+#ifndef __HTTPOBJECT_H__
+#define __HTTPOBJECT_H__
 
 #include <stdio.h>
 #include <string.h>
@@ -24,12 +24,10 @@ typedef struct {
 } HttpServer;
 
 typedef struct {
-	char* path;
-	void (*http_func)(int, void*);
-} HTTP_API;
+    char headOption[100][2000];
+    int optSize;
+    char body[BUFSIZ];
+    int bodySize;
+} HttpRequest;
 
-int serverCreate(HttpServer* server);
-void serverStart(HttpServer* server);
-void serverJoin(HttpServer* server);
-
-#endif // __HTTPSERVER_H__
+#endif // __HTTPOBJECT_H__
