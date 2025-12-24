@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 #include <sys/epoll.h>
+#include <errno.h>
 
 #define MAX_EVENTS 50
 

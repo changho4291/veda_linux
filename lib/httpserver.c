@@ -16,9 +16,12 @@ HTTP_API postApi[] = {
 
 //--- private funcs ---
 void* _serverStart(void* sv);
-void parseHttp(char* buf, int csock);
+void parseHttp(char* buf, int csock, HttpServer* server);
 void* _clnt_connection(void *arg);
 void sendError(FILE* fp);
+void cleanup(int efd, int fd);
+void nonblock(int sockfd);
+// void recive()
 
 //--- public ---
 
@@ -91,7 +94,7 @@ void* _serverStart(void* sv) {
         }
 
         for (int i = 0; i < event_count; i++) {
-            if(server->events[i].data.fd = server->sock) {
+            if(server->events[i].data.fd == server->sock) {
                 /* 클라이언트의 요청을 기다린다. */
                 uint32_t len = sizeof(server->cliaddr);
                 csock = accept(server->sock, (struct sockaddr*)&server->cliaddr, &len);
@@ -100,6 +103,9 @@ void* _serverStart(void* sv) {
                 inet_ntop(AF_INET, &server->cliaddr.sin_addr, mesg, BUFSIZ);
                 printf("Client IP : %s:%d\n", mesg, ntohs(server->cliaddr.sin_port));
         
+                // 논블럭 소켓
+                nonblock(csock);
+
                 // epoll에 클라이언트 소켓 추가
                 server->ev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
                 server->ev.data.fd = csock;
@@ -108,36 +114,55 @@ void* _serverStart(void* sv) {
                     perror("epoll_ctl");
                 }
             } else {
-                // epoll 수신 처리
-                if (server->events[i].events & EPOLLIN) {
-                    int readn = read(server->events[i].data.fd, buf_in, BUFSIZ);
-
-                    if (readn <= 0) {
-                        cleanup(server->events[i].data.fd);
-                        continue;
-                    }
-
-                    buf_in[readn] = '\0';
-                    printf("%s\n", buf_in);
-                    // TODO 읽어온 패킷을 http 파싱 함수로 보낸다
-                    parseHttp(buf_in, server->events[i].data.fd);
-                    continue;
-                } 
-
-                // TODO 잠만 HTTP는 한번 송수신 받고나면 바로 종료하는데?
-                
                 // epoll 에러 또는 종료
                 if (server->events[i].events & (EPOLLRDHUP | EPOLLERR | EPOLLHUP)) {
-                    cleanup(server->events[i].data.fd);
+                    cleanup(server->efd, server->events[i].data.fd);
+                    continue;
+                }
+
+                // epoll 수신 처리
+                if (server->events[i].events & EPOLLIN) {
+                    while (1) {
+                        ssize_t readn = read(server->events[i].data.fd, buf_in, BUFSIZ-1);
+    
+                        if (readn > 0) {
+                            buf_in[readn] = '\0';
+                            printf("%s\n", buf_in);
+
+                            // 읽어온 패킷을 http 파싱 함수로 보낸다
+                            parseHttp(buf_in, server->events[i].data.fd, server);
+                            break;
+                        } else if (readn == 0) {
+                            cleanup(server->efd, server->events[i].data.fd);
+                            break;
+                        } else  {
+                            if (errno == EAGAIN || errno == EWOULDBLOCK) { break; } // 더 읽을 내용 없음
+                            cleanup(server->efd, server->events[i].data.fd);
+                            break;
+                        }
+                    }
                     continue;
                 }
             }
         }
-
     }
 }
 
-void parseHttp(char* buf, int csock) {
+void nonblock(int sockfd) {
+	int opts;
+
+    if((opts=fcntl(sockfd, F_GETFL, 0))==-1) {
+        perror("fcntl");
+        exit(1);
+    }
+    if(fcntl(sockfd, F_SETFL, opts | O_NONBLOCK) ==-1) {
+        perror("fcntl");
+        exit(1);
+    }
+}
+
+// nonblock epoll 이기 때문에 한번의 read로 모든 요청을 받는다는 보장 없음
+void parseHttp(char* buf, int csock, HttpServer* server) {
     char method[BUFSIZ], type[BUFSIZ];
     char path[BUFSIZ], *ret;
 
@@ -162,59 +187,21 @@ void parseHttp(char* buf, int csock) {
             }
         }
     }
-}
-
-void* _clnt_connection(void *arg) {
-    int csock = *((int*)arg);
-    FILE *clnt_read, *clnt_write;
-    char reg_line[BUFSIZ], reg_buf[BUFSIZ];
-    char method[BUFSIZ], type[BUFSIZ];
-    char path[BUFSIZ], *ret;
-
-    /* 파일 디스크립터를 FILE 스트림으로 변환한다. */
-    clnt_read = fdopen(csock, "r");
-    clnt_write = fdopen(dup(csock), "w");
-
-    /* 한 줄의 문자열을 읽어서 reg_line 변수에 저장한다. */
-    fgets(reg_line, BUFSIZ, clnt_read);
-    
-    /* reg_line 변수에 문자열을 화면에 출력한다. */
-    fputs(reg_line, stdout);
-
-    /* ' ' 문자로 reg_line을 구분해서 요청 라인의 내용(메소드)를 분리한다. */
-    ret = strtok(reg_line, "/ ");
-    strcpy(method, (ret != NULL)?ret:"");
-
-    ret = strtok(NULL, " ");                /* 요청 라인에서 경로(path)를 가져온다. */
-    strcpy(path, (ret != NULL)?ret:"/");
-
-    int i = 0;
-    if(strcmp(method, "POST") == 0) {         /* POST 메소드일 경우를 처리한다. */
-        for(; postApi[i].path != NULL; i++) {
-            if(!strcmp(postApi[i].path, path)) {
-                postApi[i].http_func(clnt_write);
-            }
-        }
-    } else if(strcmp(method, "GET") == 0) {	/* GET 메소드일 경우를 처리한다. */
-        for(; getApi[i].path != NULL; i++) {
-            if(!strcmp(getApi[i].path, path)) {
-                getApi[i].http_func(clnt_write);
-            }
-        }
-    }
 
     // TODO i가 0이면 호출하는게 없다는 의미이므로 오류
-    // if (!i) { sendError(clnt_write); }   /* 에러 메시지를 클라이언트로 보낸다. */
+    // if (!i) { sendError(clnt_write); }   /* 에러 메시지를 클라이언트로 보낸다.
 
-    fclose(clnt_read);              /* 파일의 스트림을 닫는다. */
-    fclose(clnt_write);
-    pthread_exit(0);                /* 스레드를 종료시킨다. */
-
-    return (void*)NULL;
+    // 송신이 끝나면 소켓을 닫는다.
+    cleanup(server->efd, csock);
 }
 
-void mainPage(int csock, void* fp) {
-    FILE* clnt_write = fp;  // TODO 이건 삭제
+void cleanup(int efd, int fd) {
+    epoll_ctl(efd, EPOLL_CTL_DEL, fd, NULL);  // epoll 제거
+    close(fd);                                // fd 종료
+    // remove_connection(fd);                    // 내부 자료구조 정리
+}
+
+void mainPage(int csock, void* arg) {
 
     /* 클라이언트로 보낼 성공에 대한 응답 메시지 */
     char protocol[ ] = "HTTP/1.1 200 OK\r\n";
@@ -242,13 +229,11 @@ void mainPage(int csock, void* fp) {
             "</html>"
     , 0.1, 0.1, 0.1);
 
-    int fd, len;
-
-    fputs(protocol, fp);
-    fputs(server, fp);
-    fputs(cnt_type, fp);
-    fputs(end, fp);
-    fputs(body, fp);
+    send(csock, protocol, strlen(protocol), 0);
+    send(csock, server, strlen(server), 0);
+    send(csock, cnt_type, strlen(cnt_type), 0);
+    send(csock, end, strlen(end), 0);
+    send(csock, body, strlen(body), 0);
 }
 
 void sendError(FILE* fp) {
