@@ -225,20 +225,11 @@ void cleanup(int efd, int fd) {
 }
 
 void sendError(int csock) {
-    /* 클라이언트로 보낼 실패에 대한 HTTP 응답 메시지 */
-    char protocol[ ] = "HTTP/1.1 404 Not Found\r\n";
-    char server[ ] = "Server: Netscape-Enterprise/6.0\r\n";
-    // char cnt_len[ ] = "Content-Length:1024\r\n";
-    char cnt_type[ ] = "Content-Type:text/html\r\n\r\n";
+    char respons[BUFSIZ] = "HTTP/1.1 404 Not Found\r\n"
+        "Server: Netscape-Enterprise/6.0\r\n";
+        "Content-Type:text/html\r\n\r\n";
+        "<html><head><title>Content Not Found</title></head>";
+        "<body><font size=+5>Content Not Found</font></body></html>";
 
-    /* 화면에 표시될 HTML의 내용 */
-    char content1[ ] = "<html><head><title>Content Not Found</title></head>";
-    char content2[ ] = "<body><font size=+5>Content Not Found</font></body></html>";
-
-    send(csock, protocol, strlen(protocol), 0);
-    send(csock, server, strlen(server), 0);
-    // send(csock, cnt_len, strlen(cnt_len), 0);
-    send(csock, cnt_type, strlen(cnt_type), 0);
-    send(csock, content1, strlen(content1), 0);
-    send(csock, content2, strlen(content2), 0);
+    send(csock, respons, strlen(respons), 0);
 }
