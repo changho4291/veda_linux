@@ -17,7 +17,7 @@ HTTP_API getApi[] = {
 HTTP_API postApi[] = {
     "/led/on", ledOn,
     "/led/off", ledOff,
-    "/led/pwm", ledPwm,
+    "/led/pwm", ledPwmSet,
     "/led/cds", ledCds,
     "/led", ledSet,
     "/buzz/on", buzzOn,

@@ -8,8 +8,9 @@ file(GLOB SOURCES *.c)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 add_subdirectory(http)
+add_subdirectory(indicators)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE http)
+target_link_libraries(${PROJECT_NAME} PRIVATE http indicators)
 
 # install(TARGETS main
 #         RUNTIME DESTINATION bin)
