@@ -7,7 +7,7 @@ file(GLOB SOURCES *.c)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-add_subdirectory(lib)
+add_subdirectory(http)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE http)
 

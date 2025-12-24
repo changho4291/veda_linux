@@ -191,6 +191,7 @@ void parseHttp(char* buf, int csock) {
         req.optSize++;
     }
 
+    // TODO 나중에 콜백에서 수신받아서 여기서 send 모아 보내게 바꿔야지
     int i = 0, succ = 0;
     if(strcmp(method, "POST") == 0) {         /* POST 메소드일 경우를 처리한다. */
         for(; postApi[i].path != NULL; i++) {

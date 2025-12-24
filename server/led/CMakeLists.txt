@@ -1,9 +1,9 @@
-# /lib
+# /led
 
 cmake_minimum_required(VERSION 3.14)
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-project(http)
+project(led)
 
 file(GLOB SOURCES *.c)
 
