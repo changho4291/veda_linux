@@ -1,6 +1,10 @@
 
 #include "controller.h"
 
+const char defultHeader[] = "HTTP/1.1 200 OK\r\n"
+    "Content-Type: application/json\r\n"
+    "Connection: close\r\n";
+
 void controllerCreate(Controller* control, HttpServer* sv, Led* led) {
     control->sver = sv;
     control->led = led;
@@ -21,58 +25,84 @@ void controllerCreate(Controller* control, HttpServer* sv, Led* led) {
 }
 
 void ledOn(int csock, HttpRequest* req, void* arg) {
+    Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
-    sprintf(respons, "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
-        "Connection: close\r\n"
-        "Content-Length: 42\r\n\r\n"
-        "{"
-            "\"result\":1,"
-            // "\"status\":%d,"
-            "\"status\":1,"
-            "\"pwm\":100,"
-            "\"cds\":0"
+    ledOnOff(control->led, HIGH);
+
+    char body[500]; 
+    sprintf(body, "{"
+            "\"status\": %d,"
+            "\"pwm\": %d,"
+            "\"cds\": %d"
         "}"
+        , control->led->status
+        , control->led->pwm
+        , control->led->cds
     );
-    // , ledOnOff(led, 1));
+
+    sprintf(respons, "%s"
+        "Content-Length: %d\r\n\r\n"
+        "%s"
+        , defultHeader, strlen(body), body);
 
     send(csock, respons, strlen(respons), 0);
 }
 
 void ledOff(int csock, HttpRequest* req, void* arg) {
+    Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
-    
-    sprintf(respons, "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
-        "Connection: close\r\n"
-        "Content-Length: 42\r\n\r\n"
-        "{"
-            "\"result\":1,"
-            // "\"status\":%d,"
-            "\"status\":0,"
-            "\"pwm\":100,"
-            "\"cds\":0"
+
+    ledOnOff(control->led, LOW);
+
+    char body[500]; 
+    sprintf(body, "{"
+            "\"status\": %d,"
+            "\"pwm\": %d,"
+            "\"cds\": %d"
         "}"
+        , control->led->status
+        , control->led->pwm
+        , control->led->cds
     );
-    // , ledOnOff(led, 0));
+
+    sprintf(respons, "%s"
+        "Content-Length: %d\r\n\r\n"
+        "%s"
+        , defultHeader, strlen(body), body);
+
     send(csock, respons, strlen(respons), 0);
 }
 
 void ledPwmSet(int csock, HttpRequest* req, void* arg) {
+    Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
-    sprintf(respons, "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
-        "Connection: close\r\n"
-        "Content-Length: 42\r\n\r\n"
-        "{"
-            "\"result\":1,"
-            "\"status\":1,"
-            "\"pwm\":100,"
-            "\"cds\":0"
+    char* ret;
+    ret = strtok(req->body, "{}:");
+    while (ret != NULL) {
+printf("%s\n", ret);
+         ret = strtok(NULL, "{}:");
+    }
+    
+
+    // ledPwm(control->led, req.);
+
+    char body[500]; 
+    sprintf(body, "{"
+            "\"status\": %d,"
+            "\"pwm\": %d,"
+            "\"cds\": %d"
         "}"
+        , control->led->status
+        , control->led->pwm
+        , control->led->cds
     );
+
+    sprintf(respons, "%s"
+        "Content-Length: %d\r\n\r\n"
+        "%s"
+        , defultHeader, strlen(body), body);
 
     send(csock, respons, strlen(respons), 0);
 }

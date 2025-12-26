@@ -21,9 +21,9 @@ void ledCreate(Led* led, int pin);
 void ledPwmStart(Led* led);
 void ledPwmJoin(Led* led);
 
-int ledOnOff(Led* led, int value);
+void ledOnOff(Led* led, int value);
 
-int ledPwm(Led* led, int value);
+void ledPwm(Led* led, int value);
 
 
 #endif // __LED_H__

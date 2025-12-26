@@ -3,29 +3,6 @@
 
 #define HTTP_PORT 60000
 
-// HTTP_API getApi[] = {
-//     "/led", ledGet,
-//     "/cds", cdsGet,
-//     NULL, NULL
-// };
-
-// HTTP_API postApi[] = {
-//     "/led/on", ledOn,
-//     "/led/off", ledOff,
-//     "/led/pwm", ledPwmSet,
-//     "/led/cds", ledCds,
-//     "/led", ledSet,
-//     "/buzz/on", buzzOn,
-//     "/buzz/off", buzzOff,
-//     "/alaram", alaramSet,
-//     NULL, NULL
-// };
-
-// HTTP_API deleteApi[] = {
-//     "/alaram", alaramDelete,
-//     NULL, NULL
-// };
-
 //--- private funcs ---
 void* _serverStart(void* sv);
 void parseHttp(HttpServer* sv, char* buf, int csock);
@@ -226,24 +203,24 @@ void parseHttp(HttpServer* sv, char* buf, int csock) {
     int i = 0, succ = 0;
     HTTP_API* result = NULL;
     if(strcmp(method, "POST") == 0) {         /* POST 메소드일 경우를 처리한다. */
-        if(searchNode(sv->postApi, apiSearch, path, (void*)result)) {
+        if(searchNode(sv->postApi, apiSearch, path, (void**)&result)) {
             result->http_func(csock, &req, result->arg);
             succ = 1;
         }
     } else if(strcmp(method, "GET") == 0) {	/* GET 메소드일 경우를 처리한다. */
-        if(searchNode(sv->getApi, apiSearch, path, (void*)result)) {
+        if(searchNode(sv->getApi, apiSearch, path, (void**)&result)) {
             result->http_func(csock, &req, result->arg);
             succ = 1;
         }
     } else if(strcmp(method, "DELETE") == 0) {	/* DELETE 메소드일 경우를 처리한다. */
-        if(searchNode(sv->deleteApi, apiSearch, path, (void*)result)) {
+        if(searchNode(sv->deleteApi, apiSearch, path, (void**)&result)) {
             result->http_func(csock, &req, result->arg);
             succ = 1;
         }
     }
 
-    // i가 0이면 호출하는게 없다는 의미이므로 오류
-    if (!succ) { sendError(csock); }   /* 에러 메시지를 클라이언트로 보낸다. */
+    // 실행된 url이 없다면 404 Not Found 송출
+    if (!succ) { sendError(csock); }
 }
 
 void cleanup(int efd, int fd) {
