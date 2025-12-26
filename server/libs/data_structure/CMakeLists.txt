@@ -1,9 +1,9 @@
-# /http
+# /data_structure
 
 cmake_minimum_required(VERSION 3.14)
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-project(http)
+project(data_structure)
 
 file(GLOB SOURCES *.c)
 
@@ -15,7 +15,7 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:install>
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pthread indicators)
+# target_link_libraries(${PROJECT_NAME} PUBLIC pthread wiringPi)
 
 # install(TARGETS calc
 #         EXPORT calcTargets

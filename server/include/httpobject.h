@@ -14,6 +14,8 @@
 #include <sys/epoll.h>
 #include <errno.h>
 
+#include "linkedList.h"
+
 #define MAX_EVENTS 50
 
 typedef struct {
@@ -21,6 +23,9 @@ typedef struct {
     pthread_t thread;
     struct sockaddr_in servaddr, cliaddr;
     struct epoll_event ev, events[MAX_EVENTS];
+    LinkedList* getApi;
+    LinkedList* postApi;
+    LinkedList* deleteApi;
 } HttpServer;
 
 typedef struct {
@@ -29,5 +34,11 @@ typedef struct {
     char body[BUFSIZ];
     int bodySize;
 } HttpRequest;
+
+typedef struct HTTP_API {
+	const char* path;
+	void (*http_func)(int, HttpRequest*, void*);
+    void* arg;
+} HTTP_API;
 
 #endif // __HTTPOBJECT_H__

@@ -1,34 +1,37 @@
 #ifndef __CONTROLLER_H__
 #define __CONTROLLER_H__
 
-#include "httpobject.h"
+#include "httpserver.h"
 #include "led.h"
 
 #define MAX_LED_NUM 10
 
 typedef struct {
+    HttpServer* sver;
     Led* led;
-} DataPack;
+} Controller;
 
-void ledOn(int csock, HttpRequest* req);
+void controllerCreate(Controller* control, HttpServer* sv, Led* led);
 
-void ledOff(int csock, HttpRequest* req);
+void ledOn(int csock, HttpRequest* req, void* arg);
 
-void ledPwmSet(int csock, HttpRequest* req);
+void ledOff(int csock, HttpRequest* req, void* arg);
 
-void ledCds(int csock, HttpRequest* req);
+void ledPwmSet(int csock, HttpRequest* req, void* arg);
 
-void ledSet(int csock, HttpRequest* req);
+void ledCds(int csock, HttpRequest* req, void* arg);
 
-void ledGet(int csock, HttpRequest* req);
+void ledSet(int csock, HttpRequest* req, void* arg);
 
-void cdsGet(int csock, HttpRequest* req);
+void ledGet(int csock, HttpRequest* req, void* arg);
 
-void buzzOn(int csock, HttpRequest* req);
+void cdsGet(int csock, HttpRequest* req, void* arg);
 
-void buzzOff(int csock, HttpRequest* req);
+void buzzOn(int csock, HttpRequest* req, void* arg);
 
-void alaramSet(int csock, HttpRequest* req);
+void buzzOff(int csock, HttpRequest* req, void* arg);
 
-void alaramDelete(int csock, HttpRequest* req);
+void alaramSet(int csock, HttpRequest* req, void* arg);
+
+void alaramDelete(int csock, HttpRequest* req, void* arg);
 #endif // __CONTROLLER_H__

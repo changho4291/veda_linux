@@ -5,7 +5,6 @@
 #include <softPwm.h>
 
 #include "peripheral.h"
-#include "controller.h"
 
 typedef struct {
     pthread_t thread;
@@ -18,7 +17,7 @@ typedef struct {
 
 #define MAX_PWM 255
 
-void createLed(Led* led, int pin);
+void ledCreate(Led* led, int pin);
 void ledPwmStart(Led* led);
 void ledPwmJoin(Led* led);
 

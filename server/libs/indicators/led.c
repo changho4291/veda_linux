@@ -2,7 +2,7 @@
 
 void* _ledPwmStart(void* arg);
 
-void createLed(Led* led, int pin) {
+void ledCreate(Led* led, int pin) {
     led->pin = pin;
     led->status = 0;
     led->pwm = 255;

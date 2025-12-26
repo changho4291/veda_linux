@@ -3,44 +3,48 @@
 
 #define HTTP_PORT 60000
 
-typedef struct {
-	char* path;
-	void (*http_func)(int, HttpRequest*);
-} HTTP_API;
+// HTTP_API getApi[] = {
+//     "/led", ledGet,
+//     "/cds", cdsGet,
+//     NULL, NULL
+// };
 
-HTTP_API getApi[] = {
-    "/led", ledGet,
-    "/cds", cdsGet,
-    NULL, NULL
-};
+// HTTP_API postApi[] = {
+//     "/led/on", ledOn,
+//     "/led/off", ledOff,
+//     "/led/pwm", ledPwmSet,
+//     "/led/cds", ledCds,
+//     "/led", ledSet,
+//     "/buzz/on", buzzOn,
+//     "/buzz/off", buzzOff,
+//     "/alaram", alaramSet,
+//     NULL, NULL
+// };
 
-HTTP_API postApi[] = {
-    "/led/on", ledOn,
-    "/led/off", ledOff,
-    "/led/pwm", ledPwmSet,
-    "/led/cds", ledCds,
-    "/led", ledSet,
-    "/buzz/on", buzzOn,
-    "/buzz/off", buzzOff,
-    "/alaram", alaramSet,
-    NULL, NULL
-};
-
-HTTP_API deleteApi[] = {
-    "/alaram", alaramDelete,
-    NULL, NULL
-};
+// HTTP_API deleteApi[] = {
+//     "/alaram", alaramDelete,
+//     NULL, NULL
+// };
 
 //--- private funcs ---
 void* _serverStart(void* sv);
-void parseHttp(char* buf, int csock);
+void parseHttp(HttpServer* sv, char* buf, int csock);
 void* _clnt_connection(void *arg);
 void sendError(int csock);
 void cleanup(int efd, int fd);
+int apiSearch(void* findData, void* nodeData);
 
 //--- public ---
 
 int serverCreate(HttpServer* server) {
+    server->getApi = (LinkedList*)malloc(sizeof(LinkedList));
+    server->postApi = (LinkedList*)malloc(sizeof(LinkedList));
+    server->deleteApi = (LinkedList*)malloc(sizeof(LinkedList));
+
+    linkedListCreate(server->getApi, 20);
+    linkedListCreate(server->postApi, 20);
+    linkedListCreate(server->deleteApi, 20);
+
     server->sock = socket(AF_INET, SOCK_STREAM, 0);
     if(server->sock == -1) {
         perror("socket()");
@@ -88,6 +92,33 @@ void serverStart(HttpServer* server) {
 
 void serverJoin(HttpServer* server) {
     pthread_join(server->thread, NULL);
+}
+
+void setGetApi(HttpServer* server, const char* path
+    , void (*http_func)(int, HttpRequest*, void*), void* arg) {
+    HTTP_API* httpApi = (HTTP_API*)malloc(sizeof(HTTP_API));
+    httpApi->path = path;
+    httpApi->http_func = http_func;
+    httpApi->arg = arg;
+    inputNode(server->getApi, httpApi);
+}
+
+void setPostApi(HttpServer* server, const char* path
+    , void (*http_func)(int, HttpRequest*, void*), void* arg) {
+    HTTP_API* httpApi = (HTTP_API*)malloc(sizeof(HTTP_API));
+    httpApi->path = path;
+    httpApi->http_func = http_func;
+    httpApi->arg = arg;
+    inputNode(server->postApi, httpApi);
+}
+
+void setDeleteApi(HttpServer* server, const char* path
+    , void (*http_func)(int, HttpRequest*, void*), void* arg) {
+    HTTP_API* httpApi = (HTTP_API*)malloc(sizeof(HTTP_API));
+    httpApi->path = path;
+    httpApi->http_func = http_func;
+    httpApi->arg = arg;
+    inputNode(server->deleteApi, httpApi);
 }
 
 //--- private ---
@@ -145,7 +176,7 @@ void* _serverStart(void* sv) {
                             printf("%s\n", buf_in);
 
                             // 읽어온 패킷을 http 파싱 함수로 보낸다
-                            parseHttp(buf_in, server->events[i].data.fd);
+                            parseHttp(sv, buf_in, server->events[i].data.fd);
                         }
                         
                         cleanup(server->efd, server->events[i].data.fd);
@@ -158,7 +189,7 @@ void* _serverStart(void* sv) {
     }
 }
 
-void parseHttp(char* buf, int csock) {
+void parseHttp(HttpServer* sv, char* buf, int csock) {
     char head[BUFSIZ];
     char method[10];
     char path[2048], *ret;
@@ -193,26 +224,21 @@ void parseHttp(char* buf, int csock) {
 
     // TODO 나중에 콜백에서 수신받아서 여기서 send 모아 보내게 바꿔야지
     int i = 0, succ = 0;
+    HTTP_API* result = NULL;
     if(strcmp(method, "POST") == 0) {         /* POST 메소드일 경우를 처리한다. */
-        for(; postApi[i].path != NULL; i++) {
-            if(!strcmp(postApi[i].path, path)) {
-                postApi[i].http_func(csock, &req);
-                succ = 1;
-            }
+        if(searchNode(sv->postApi, apiSearch, path, (void*)result)) {
+            result->http_func(csock, &req, result->arg);
+            succ = 1;
         }
     } else if(strcmp(method, "GET") == 0) {	/* GET 메소드일 경우를 처리한다. */
-        for(; getApi[i].path != NULL; i++) {
-            if(!strcmp(getApi[i].path, path)) {
-                getApi[i].http_func(csock, &req);
-                succ = 1;
-            }
+        if(searchNode(sv->getApi, apiSearch, path, (void*)result)) {
+            result->http_func(csock, &req, result->arg);
+            succ = 1;
         }
     } else if(strcmp(method, "DELETE") == 0) {	/* DELETE 메소드일 경우를 처리한다. */
-        for(; deleteApi[i].path != NULL; i++) {
-            if(!strcmp(deleteApi[i].path, path)) {
-                deleteApi[i].http_func(csock, &req);
-                succ = 1;
-            }
+        if(searchNode(sv->deleteApi, apiSearch, path, (void*)result)) {
+            result->http_func(csock, &req, result->arg);
+            succ = 1;
         }
     }
 
@@ -227,10 +253,17 @@ void cleanup(int efd, int fd) {
 
 void sendError(int csock) {
     char respons[BUFSIZ] = "HTTP/1.1 404 Not Found\r\n"
-        "Server: Netscape-Enterprise/6.0\r\n";
-        "Content-Type:text/html\r\n\r\n";
-        "<html><head><title>Content Not Found</title></head>";
+        "Server: Netscape-Enterprise/6.0\r\n"
+        "Content-Type:text/html\r\n\r\n"
+        "<html><head><title>Content Not Found</title></head>"
         "<body><font size=+5>Content Not Found</font></body></html>";
 
     send(csock, respons, strlen(respons), 0);
+}
+
+int apiSearch(void* findData, void* nodeData) {
+    char* fdata = (char*)findData;
+    HTTP_API* ndata = (HTTP_API*)nodeData;
+
+    return !strcmp(fdata, ndata->path);
 }
