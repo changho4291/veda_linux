@@ -1,6 +1,8 @@
 #ifndef __CONTROLLER_H__
 #define __CONTROLLER_H__
 
+#include "cJSON.h"
+
 #include "httpserver.h"
 #include "led.h"
 

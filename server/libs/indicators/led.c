@@ -5,7 +5,7 @@ void* _ledPwmStart(void* arg);
 void ledCreate(Led* led, int pin) {
     led->pin = pin;
     led->status = 0;
-    led->pwm = 255;
+    led->pwm = 100;
     led->cds = 0;
     pinMode(pin, OUTPUT);
 }
@@ -22,7 +22,7 @@ void ledCreate(Led* led, int pin) {
 
 void ledOnOff(Led* led, int value) {
     if (value) {
-        softPwmCreate(led->pin, led->pwm, 255);
+        softPwmCreate(led->pin, led->pwm, 100);
     } else {
         softPwmStop(led->pin);
     }
@@ -31,7 +31,7 @@ void ledOnOff(Led* led, int value) {
 }
 
 void ledPwm(Led* led, int value) {
-    if (value > 255) { value = 255; }
+    if (value > 100) { value = 100; }
     else if (value < 0) { value = 0; }
     softPwmWrite(led->pin, value);
     led->pwm = value;

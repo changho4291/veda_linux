@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.14)
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
 project(http)
-
 file(GLOB SOURCES *.c)
 
 add_library(${PROJECT_NAME} ${SOURCES})

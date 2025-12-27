@@ -14,7 +14,6 @@ int main(int argc, char const *argv[]) {
     controllerCreate(&controll, &server, &led);
 
     serverStart(&server);
-    // ledPwmStart()
 
     serverJoin(&server);
     return 0;

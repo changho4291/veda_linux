@@ -78,15 +78,10 @@ void ledPwmSet(int csock, HttpRequest* req, void* arg) {
     Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
-    char* ret;
-    ret = strtok(req->body, "{}:");
-    while (ret != NULL) {
-printf("%s\n", ret);
-         ret = strtok(NULL, "{}:");
-    }
-    
+    cJSON* root = cJSON_Parse(req->body);
+    cJSON* pwm = cJSON_GetObjectItem(root, "pwm");
 
-    // ledPwm(control->led, req.);
+    ledPwm(control->led, pwm->valueint);
 
     char body[500]; 
     sprintf(body, "{"
@@ -105,6 +100,7 @@ printf("%s\n", ret);
         , defultHeader, strlen(body), body);
 
     send(csock, respons, strlen(respons), 0);
+    cJSON_Delete(root);
 }
 
 void ledCds(int csock, HttpRequest* req, void* arg) {
