@@ -5,15 +5,17 @@
 
 #include "httpserver.h"
 #include "led.h"
+#include "yl40.h"
 
 #define MAX_LED_NUM 10
 
 typedef struct {
     HttpServer* sver;
     Led* led;
+    YL40* yl40;
 } Controller;
 
-void controllerCreate(Controller* control, HttpServer* sv, Led* led);
+void controllerCreate(Controller* control, HttpServer* sv, Led* led, YL40* yl40);
 
 void ledOn(int csock, HttpRequest* req, void* arg);
 

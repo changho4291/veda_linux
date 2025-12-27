@@ -1,13 +1,14 @@
 
 #include "controller.h"
 
-const char defultHeader[] = "HTTP/1.1 200 OK\r\n"
+const char HTTP_DEF_HEAD[] = "HTTP/1.1 200 OK\r\n"
     "Content-Type: application/json\r\n"
     "Connection: close\r\n";
 
-void controllerCreate(Controller* control, HttpServer* sv, Led* led) {
+void controllerCreate(Controller* control, HttpServer* sv, Led* led, YL40* yl40) {
     control->sver = sv;
     control->led = led;
+    control->yl40 = yl40;
 
     setGetApi(sv, "/led", ledGet, (void*)control);
     setGetApi(sv, "/cds", cdsGet, (void*)control);
@@ -28,24 +29,27 @@ void ledOn(int csock, HttpRequest* req, void* arg) {
     Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
+    // led On 수행
     ledOnOff(control->led, HIGH);
 
-    char body[500]; 
-    sprintf(body, "{"
-            "\"status\": %d,"
-            "\"pwm\": %d,"
-            "\"cds\": %d"
-        "}"
-        , control->led->status
-        , control->led->pwm
-        , control->led->cds
-    );
+    // JSON 포멧으로 결과 작성(body)
+    cJSON* root = cJSON_CreateObject();
 
+    cJSON_AddNumberToObject(root, "status", control->led->status);
+    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
+    cJSON_AddNumberToObject(root, "cds", control->led->cds);
+
+    char* body = cJSON_PrintUnformatted(root);
+
+    cJSON_Delete(root); // json 객체 삭제
+
+    // HTTP 포멧에 맞게 작성
     sprintf(respons, "%s"
         "Content-Length: %d\r\n\r\n"
         "%s"
-        , defultHeader, strlen(body), body);
+        , HTTP_DEF_HEAD, strlen(body), body);
 
+    // 결과 송신
     send(csock, respons, strlen(respons), 0);
 }
 
@@ -53,24 +57,27 @@ void ledOff(int csock, HttpRequest* req, void* arg) {
     Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
+    // led Off 수행
     ledOnOff(control->led, LOW);
 
-    char body[500]; 
-    sprintf(body, "{"
-            "\"status\": %d,"
-            "\"pwm\": %d,"
-            "\"cds\": %d"
-        "}"
-        , control->led->status
-        , control->led->pwm
-        , control->led->cds
-    );
+    // JSON 포멧으로 결과 작성(body)
+    cJSON* root = cJSON_CreateObject();
 
+    cJSON_AddNumberToObject(root, "status", control->led->status);
+    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
+    cJSON_AddNumberToObject(root, "cds", control->led->cds);
+
+    char* body = cJSON_PrintUnformatted(root);
+
+    cJSON_Delete(root); // json 객체 삭제
+
+    // HTTP 포멧에 맞게 작성
     sprintf(respons, "%s"
         "Content-Length: %d\r\n\r\n"
         "%s"
-        , defultHeader, strlen(body), body);
+        , HTTP_DEF_HEAD, strlen(body), body);
 
+    // 결과 송신
     send(csock, respons, strlen(respons), 0);
 }
 
@@ -78,40 +85,44 @@ void ledPwmSet(int csock, HttpRequest* req, void* arg) {
     Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
+    // 수신값을 JSON으로 파싱
     cJSON* root = cJSON_Parse(req->body);
     cJSON* pwm = cJSON_GetObjectItem(root, "pwm");
+    cJSON_Delete(root);
 
     ledPwm(control->led, pwm->valueint);
+    
+    // JSON 포멧으로 결과 작성(body)
+    root = cJSON_CreateObject();
 
-    char body[500]; 
-    sprintf(body, "{"
-            "\"status\": %d,"
-            "\"pwm\": %d,"
-            "\"cds\": %d"
-        "}"
-        , control->led->status
-        , control->led->pwm
-        , control->led->cds
-    );
+    cJSON_AddNumberToObject(root, "status", control->led->status);
+    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
+    cJSON_AddNumberToObject(root, "cds", control->led->cds);
 
+    char* body = cJSON_PrintUnformatted(root);
+
+    cJSON_Delete(root); // json 객체 삭제
+
+    // HTTP 포멧에 맞게 작성
     sprintf(respons, "%s"
         "Content-Length: %d\r\n\r\n"
         "%s"
-        , defultHeader, strlen(body), body);
+        , HTTP_DEF_HEAD, strlen(body), body);
 
+    // 결과 송신
     send(csock, respons, strlen(respons), 0);
-    cJSON_Delete(root);
 }
 
 void ledCds(int csock, HttpRequest* req, void* arg) {
     char respons[BUFSIZ];
+
+    // TODO 작업 남음
 
     sprintf(respons, "HTTP/1.1 200 OK\r\n"
         "Content-Type: application/json\r\n"
         "Connection: close\r\n"
         "Content-Length: 42\r\n\r\n"
         "{"
-            "\"result\":1,"
             "\"status\":1,"
             "\"pwm\":100,"
             "\"cds\":0"
@@ -124,12 +135,13 @@ void ledCds(int csock, HttpRequest* req, void* arg) {
 void ledSet(int csock, HttpRequest* req, void* arg) {
     char respons[BUFSIZ];
 
+    // TODO 작업 남음
+
     sprintf(respons, "HTTP/1.1 200 OK\r\n"
         "Content-Type: application/json\r\n"
         "Connection: close\r\n"
         "Content-Length: 42\r\n\r\n"
         "{"
-            "\"result\":1,"
             "\"status\":1,"
             "\"pwm\":100,"
             "\"cds\":0"
@@ -140,33 +152,50 @@ void ledSet(int csock, HttpRequest* req, void* arg) {
 }
 
 void ledGet(int csock, HttpRequest* req, void* arg) {
+    Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
-    sprintf(respons, "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
-        "Connection: close\r\n"
-        "Content-Length: 42\r\n\r\n"
-        "{"
-            "\"result\":1,"
-            "\"status\":1,"
-            "\"pwm\":100,"
-            "\"cds\":0"
-        "}"
-    );
+    // JSON 포멧으로 결과 작성(body)
+    cJSON* root = cJSON_CreateObject();
 
+    cJSON_AddNumberToObject(root, "status", control->led->status);
+    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
+    cJSON_AddNumberToObject(root, "cds", control->led->cds);
+
+    char* body = cJSON_PrintUnformatted(root);
+
+    cJSON_Delete(root); // json 객체 삭제
+
+    // HTTP 포멧에 맞게 작성
+    sprintf(respons, "%s"
+        "Content-Length: %d\r\n\r\n"
+        "%s"
+        , HTTP_DEF_HEAD, strlen(body), body);
+
+    // 결과 송신
     send(csock, respons, strlen(respons), 0);
 }
 
 void cdsGet(int csock, HttpRequest* req, void* arg) {
+    Controller* control = (Controller*)arg;
     char respons[BUFSIZ];
 
-    sprintf(respons, "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
-        "Connection: close\r\n"
-        "Content-Length: 11\r\n\r\n"
-        "{\"cds\":123}"
-    );
+    // YL40으로부터
+    int cds = getCds(control->yl40);
 
+    // 결과 값 생성
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "cds", cds);
+    char* body = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root); // json 객체 삭제
+
+    // HTTP 포멧에 맞게 작성
+    sprintf(respons, "%s"
+        "Content-Length: %d\r\n\r\n"
+        "%s"
+        , HTTP_DEF_HEAD, strlen(body), body);
+
+    // 결과 송신
     send(csock, respons, strlen(respons), 0);
 }
 

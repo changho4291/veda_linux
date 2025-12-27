@@ -8,11 +8,12 @@ file(GLOB SOURCES src/*.c)
 add_subdirectory(libs/http)
 add_subdirectory(libs/indicators)
 add_subdirectory(libs/data_structure)
+add_subdirectory(libs/sensors)
 add_subdirectory(third_party/cjson)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure cjson)
+target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson)
 
 # install(TARGETS main
 #         RUNTIME DESTINATION bin)
