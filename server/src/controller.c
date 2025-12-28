@@ -292,13 +292,15 @@ void ledModeSet(Controller* control, int mode) {
             pthread_mutex_lock(&control->mutex);
             control->led->mode = 0;
             pthread_mutex_unlock(&control->mutex);
-
             while (1) {
                 pthread_mutex_lock(&control->mutex);
-                if (!control->isThreadRun) { break; }
+                if (!control->isThreadRun) { 
+                    pthread_mutex_unlock(&control->mutex);
+                    break; 
+                }
                 pthread_mutex_unlock(&control->mutex);
+                delay(10);
             }
-            
             pthread_mutex_destroy(&control->mutex);
         }  
         break;
@@ -326,7 +328,10 @@ void* _ledCdsModeThread(void* arg) {
     while (1) {
         pthread_mutex_lock(&control->mutex);
 
-        if (!control->led->mode) { break; }
+        if (!control->led->mode) { 
+            pthread_mutex_unlock(&control->mutex);
+            break; 
+        }
 
         int cdsValue = getCds(control->yl40);
         ledPwm(control->led, (cdsValue * 100) / 255);
@@ -335,7 +340,7 @@ void* _ledCdsModeThread(void* arg) {
 
         delay(500);
     }
-
+    
     pthread_mutex_lock(&control->mutex);
     control->isThreadRun = 0;
     pthread_mutex_unlock(&control->mutex);
