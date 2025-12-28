@@ -8,6 +8,7 @@
 typedef struct {
     int pin;
     int isPlay;
+    int stop;
     pthread_mutex_t mutex;
 } Buzz;
 

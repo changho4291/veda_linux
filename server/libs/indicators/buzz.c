@@ -12,6 +12,8 @@ const int notes[] = {           // 학교종을 연주하기 위한 계이름
 void buzzCreate(Buzz* fnd, int pin) {
     fnd->pin = pin;
     fnd->isPlay = 0;
+    fnd->stop = 0;
+    
     softToneCreate(pin);    // 톤 출력을 위한 GPIO 설정
 
     pthread_mutex_init(&fnd->mutex, NULL);
@@ -28,7 +30,8 @@ void buzzPlay(Buzz* fnd) {
 
     for (int i = 0; i < TOTAL; i++) {
         pthread_mutex_lock(&fnd->mutex);
-        if (!fnd->isPlay) {
+        if (fnd->stop) {
+            fnd->stop = 0;
             pthread_mutex_unlock(&fnd->mutex);
             break;
         }
@@ -37,6 +40,10 @@ void buzzPlay(Buzz* fnd) {
         delay(280); // 음의 전체 길이만큼 출력되도록 대기
     }
     softToneWrite(fnd->pin, 0);
+
+    pthread_mutex_lock(&fnd->mutex);
+    fnd->isPlay = 0;
+    pthread_mutex_unlock(&fnd->mutex);
 }
 
 int buzzGetIsPlay(Buzz* fnd) {
@@ -49,6 +56,6 @@ int buzzGetIsPlay(Buzz* fnd) {
 
 void buzzPlayStop(Buzz* fnd) {
     pthread_mutex_lock(&fnd->mutex);
-    fnd->isPlay = 0;
+    fnd->stop = 1;
     pthread_mutex_unlock(&fnd->mutex);
 }
