@@ -1,8 +1,8 @@
 # root
-set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
+set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
 
 cmake_minimum_required(VERSION 3.14)
-project(veda_mini_project)
+project(mini_server)
 
 file(GLOB SOURCES src/*.c)
 
@@ -14,7 +14,7 @@ add_subdirectory(third_party/cjson)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson wiringPi)
+target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson dl wiringPi)
 
 install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION bin)

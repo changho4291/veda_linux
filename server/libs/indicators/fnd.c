@@ -35,7 +35,13 @@ void fndDestroy(Fnd* fnd) {
 
 void fndControl(Fnd* fnd, int num) {
     pthread_mutex_lock(&fnd->mutex);
-    fnd->num = num;
+    if (num < 0) {
+        fnd->num = 0;
+    } else if (num > 9) {
+        fnd->num = num;
+    } else {
+        fnd->num = num;
+    }
     pthread_mutex_unlock(&fnd->mutex);
 
     for (int i = 0; i < 4; i++) {
