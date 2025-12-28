@@ -1,6 +1,6 @@
 #include "yl40.h"
 
-int createYl40(YL40* yl40, const char* device, int devId) {
+int yl40Create(YL40* yl40, const char* device, int devId) {
     if((yl40->fd = wiringPiI2CSetup(devId))<0) {
         perror("wiringPiI2CSetup failed:\n");
         return 0;
@@ -11,36 +11,44 @@ int createYl40(YL40* yl40, const char* device, int devId) {
         return 0;
     }
 
+    pthread_mutex_init(&yl40->mutex, NULL);
+
     return 1;
 }
 
+void yl40Destroy(YL40* yl40) {
+    pthread_mutex_destroy(&yl40->mutex);
+}
+
 int getCds(YL40* yl40) {
-    // int prev, a2dVal;
+    int a2dVal;
 
+    pthread_mutex_lock(&yl40->mutex);
     wiringPiI2CWrite(yl40->fd, 0x00 | CDS);
-    // prev= wiringPiI2CRead(yl40->fd); 
-    // a2dVal = wiringPiI2CRead(yl40->fd);
+    a2dVal = wiringPiI2CRead(yl40->fd);
+    pthread_mutex_unlock(&yl40->mutex);
 
-    // return a2dVal;
     return wiringPiI2CRead(yl40->fd);
 }
 
 int getTmp(YL40* yl40) {
-    int prev, a2dVal;
+    int a2dVal;
 
+    pthread_mutex_lock(&yl40->mutex);
     wiringPiI2CWrite(yl40->fd, 0x00 | TMP);
-    prev= wiringPiI2CRead(yl40->fd); 
     a2dVal = wiringPiI2CRead(yl40->fd);
+    pthread_mutex_unlock(&yl40->mutex);
 
     return a2dVal;
 }
 
 int getPot(YL40* yl40) {
-    int prev, a2dVal;
+    int a2dVal;
 
+    pthread_mutex_lock(&yl40->mutex);
     wiringPiI2CWrite(yl40->fd, 0x00 | POT);
-    prev= wiringPiI2CRead(yl40->fd); 
     a2dVal = wiringPiI2CRead(yl40->fd);
+    pthread_mutex_unlock(&yl40->mutex);
 
     return a2dVal;
 }

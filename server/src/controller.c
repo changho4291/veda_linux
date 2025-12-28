@@ -18,8 +18,6 @@ void controllerCreate(Controller* control, HttpServer* sv, Led* led, YL40* yl40)
     control->led = led;
     control->yl40 = yl40;
 
-    control->isThreadRun = 0;
-
     setGetApi(sv, "/led", ledGet, (void*)control);
     setGetApi(sv, "/cds", cdsGet, (void*)control);
 
@@ -73,9 +71,9 @@ void ledOff(int csock, HttpRequest* req, void* arg) {
     // JSON 포멧으로 결과 작성(body)
     cJSON* root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", control->led->status);
-    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
-    cJSON_AddNumberToObject(root, "mode", control->led->mode);
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -100,16 +98,15 @@ void ledPwmSet(int csock, HttpRequest* req, void* arg) {
     cJSON* pwm = cJSON_GetObjectItem(root, "pwm");
     cJSON_Delete(root);
 
-    if (!control->isThreadRun) {
-        ledPwm(control->led, pwm->valueint);
-    }
+
+    ledPwm(control->led, pwm->valueint);
     
     // JSON 포멧으로 결과 작성(body)
     root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", control->led->status);
-    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
-    cJSON_AddNumberToObject(root, "mode", control->led->mode);
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -139,9 +136,9 @@ void ledMode(int csock, HttpRequest* req, void* arg) {
     // JSON 포멧으로 결과 작성(body)
     root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", control->led->status);
-    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
-    cJSON_AddNumberToObject(root, "mode", control->led->mode);
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -184,9 +181,9 @@ void ledGet(int csock, HttpRequest* req, void* arg) {
     // JSON 포멧으로 결과 작성(body)
     cJSON* root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", control->led->status);
-    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
-    cJSON_AddNumberToObject(root, "mode", control->led->mode);
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -288,29 +285,15 @@ void alaramDelete(int csock, HttpRequest* req, void* arg) {
 void ledModeSet(Controller* control, int mode) {
     switch (mode) {
     case 0: // 일반 모드
-        if (control->isThreadRun) {  // 실행중인 thread가 있다면 종료
-            pthread_mutex_lock(&control->mutex);
-            control->led->mode = 0;
-            pthread_mutex_unlock(&control->mutex);
-            while (1) {
-                pthread_mutex_lock(&control->mutex);
-                if (!control->isThreadRun) { 
-                    pthread_mutex_unlock(&control->mutex);
-                    break; 
-                }
-                pthread_mutex_unlock(&control->mutex);
-                delay(10);
-            }
-            pthread_mutex_destroy(&control->mutex);
-        }  
+        // 실행중인 thread가 있다면 종료
+        ledSetMode(control->led, 0);
         break;
 
     case 1: // CDS 연동 모드
-        if (control->isThreadRun) { break; }
+        if (ledGetMode(control->led)) { break; }
 
-        control->led->mode = 1;
+        ledSetMode(control->led, 1);
 
-        pthread_mutex_init(&control->mutex, NULL);
         pthread_create(&control->thread, NULL, _ledCdsModeThread, control);
         pthread_detach(control->thread);
         break;
@@ -323,25 +306,11 @@ void ledModeSet(Controller* control, int mode) {
 void* _ledCdsModeThread(void* arg) {
     Controller* control = (Controller*) arg;
 
-    control->isThreadRun = 1;
-
-    while (1) {
-        pthread_mutex_lock(&control->mutex);
-
-        if (!control->led->mode) { 
-            pthread_mutex_unlock(&control->mutex);
-            break; 
-        }
+    while (ledGetMode(control->led)) {
 
         int cdsValue = getCds(control->yl40);
         ledPwm(control->led, (cdsValue * 100) / 255);
 
-        pthread_mutex_unlock(&control->mutex);
-
         delay(500);
     }
-    
-    pthread_mutex_lock(&control->mutex);
-    control->isThreadRun = 0;
-    pthread_mutex_unlock(&control->mutex);
 }

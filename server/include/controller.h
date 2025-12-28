@@ -16,8 +16,6 @@ typedef struct {
     Led* led;
     YL40* yl40;
     pthread_t thread;
-    pthread_mutex_t mutex;
-    int isThreadRun;
 } Controller;
 
 void controllerCreate(Controller* control, HttpServer* sv, Led* led, YL40* yl40);

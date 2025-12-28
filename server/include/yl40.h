@@ -2,6 +2,7 @@
 #define __YL40_H__
 
 #include <stdio.h>
+#include <pthread.h>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 
@@ -11,10 +12,12 @@
 
 typedef struct {
     int fd;
+    pthread_mutex_t mutex;
 } YL40;
 
 
-int createYl40(YL40* yl40, const char* device, int devId);
+int yl40Create(YL40* yl40, const char* device, int devId);
+void yl40Destroy(YL40* yl40);
 
 int getCds(YL40* yl40);
 

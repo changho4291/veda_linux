@@ -15,11 +15,15 @@ int main(int argc, char const *argv[]) {
 
     serverCreate(&server);
     ledCreate(&led, LED1);
-    createYl40(&yl40, I2C_NAME, I2C_1_ID);
+    yl40Create(&yl40, I2C_NAME, I2C_1_ID);
     controllerCreate(&controll, &server, &led, &yl40);
 
     serverStart(&server);
 
     serverJoin(&server);
+
+    ledDestroy(&led);
+    yl40Destroy(&yl40);
+
     return 0;
 }
