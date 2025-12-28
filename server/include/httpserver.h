@@ -3,6 +3,8 @@
 
 #include "httpobject.h"
 
+#define HTTP_DEF_HEAD "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n"
+
 int serverCreate(HttpServer* server);
 
 void serverStart(HttpServer* server);

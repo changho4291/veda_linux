@@ -1,5 +1,5 @@
-#ifndef __CONTROLLER_H__
-#define __CONTROLLER_H__
+#ifndef __LEDCONTROLLER_H__
+#define __LEDCONTROLLER_H__
 
 #include <pthread.h>
 
@@ -16,9 +16,9 @@ typedef struct {
     Led* led;
     YL40* yl40;
     pthread_t thread;
-} Controller;
+} LedController;
 
-void controllerCreate(Controller* control, HttpServer* sv, Led* led, YL40* yl40);
+void ledControllerCreate(LedController* control, HttpServer* sv, Led* led, YL40* yl40);
 
 void ledOn(int csock, HttpRequest* req, void* arg);
 
@@ -34,11 +34,4 @@ void ledGet(int csock, HttpRequest* req, void* arg);
 
 void cdsGet(int csock, HttpRequest* req, void* arg);
 
-void buzzOn(int csock, HttpRequest* req, void* arg);
-
-void buzzOff(int csock, HttpRequest* req, void* arg);
-
-void alaramSet(int csock, HttpRequest* req, void* arg);
-
-void alaramDelete(int csock, HttpRequest* req, void* arg);
-#endif // __CONTROLLER_H__
+#endif // __LEDCONTROLLER_H__
