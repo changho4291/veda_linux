@@ -17,6 +17,6 @@ target_include_directories(${PROJECT_NAME}
 
 install(TARGETS ${PROJECT_NAME}
         EXPORT ${PROJECT_NAME}Targets
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION libs
+        LIBRARY DESTINATION libs
         RUNTIME DESTINATION bin)

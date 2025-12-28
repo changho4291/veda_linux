@@ -1,4 +1,5 @@
 # root
+set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
 
 cmake_minimum_required(VERSION 3.14)
 project(veda_mini_project)
@@ -13,26 +14,26 @@ add_subdirectory(third_party/cjson)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson dl)
+target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson wiringPi)
 
 install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION bin)
 
 install(EXPORT httpTargets
         FILE httpTargets.cmake
-        DESTINATION lib/cmake/http)
+        DESTINATION libs/cmake/http)
 
 install(EXPORT indicatorsTargets
         FILE indicatorsTargets.cmake
-        DESTINATION lib/cmake/indicators)
+        DESTINATION libs/cmake/indicators)
 
 install(EXPORT data_structureTargets
         FILE data_structureTargets.cmake
-        DESTINATION lib/cmake/data_structure)
+        DESTINATION libs/cmake/data_structure)
 
 install(EXPORT sensorsTargets
         FILE sensorsTargets.cmake
-        DESTINATION lib/cmake/sensors)
+        DESTINATION libs/cmake/sensors)
 
 install(EXPORT cjsonTargets
         FILE cjsonTargets.cmake

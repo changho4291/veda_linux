@@ -12,7 +12,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         $<INSTALL_INTERFACE:install>
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC pthread wiringPi)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VERSION 1.0.0
+    SOVERSION 1
+)
 
 install(TARGETS ${PROJECT_NAME}
         EXPORT ${PROJECT_NAME}Targets
