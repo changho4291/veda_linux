@@ -15,13 +15,8 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:install>
 )
 
-# target_link_libraries(${PROJECT_NAME} PUBLIC pthread wiringPi)
-
-# install(TARGETS calc
-#         EXPORT calcTargets
-#         ARCHIVE DESTINATION lib
-#         LIBRARY DESTINATION lib
-#         RUNTIME DESTINATION bin)
-
-# install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
-#         DESTINATION include)
+install(TARGETS ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}Targets
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)

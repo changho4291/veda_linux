@@ -13,11 +13,30 @@ add_subdirectory(third_party/cjson)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson)
+target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson dl)
 
-# install(TARGETS main
-#         RUNTIME DESTINATION bin)
+install(TARGETS ${PROJECT_NAME}
+        RUNTIME DESTINATION bin)
 
-# install(EXPORT calcTargets
-#         FILE calcTargets.cmake
-#         DESTINATION lib/cmake/calc)
+install(EXPORT httpTargets
+        FILE httpTargets.cmake
+        DESTINATION lib/cmake/http)
+
+install(EXPORT indicatorsTargets
+        FILE indicatorsTargets.cmake
+        DESTINATION lib/cmake/indicators)
+
+install(EXPORT data_structureTargets
+        FILE data_structureTargets.cmake
+        DESTINATION lib/cmake/data_structure)
+
+install(EXPORT sensorsTargets
+        FILE sensorsTargets.cmake
+        DESTINATION lib/cmake/sensors)
+
+install(EXPORT cjsonTargets
+        FILE cjsonTargets.cmake
+        DESTINATION third_party/cmake/cjson)
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
+        DESTINATION include)
