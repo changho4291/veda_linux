@@ -4,7 +4,7 @@ void ledCreate(Led* led, int pin) {
     led->pin = pin;
     led->status = 0;
     led->pwm = 100;
-    led->cds = 0;
+    led->mode = 0;
     pinMode(pin, OUTPUT);
 }
 

@@ -1,20 +1,17 @@
 #ifndef __LED_H__
 #define __LED_H__
 
-// #include <pthread.h>
 #include <wiringPi.h>
 #include <softPwm.h>
 
+#define MAX_PWM 255
+
 typedef struct {
-    // pthread_t thread;
-    // pthread_mutex_t mutex;
     int pin;
     int status;
     int pwm;
-    int cds;
+    int mode;
 } Led;
-
-#define MAX_PWM 255
 
 void ledCreate(Led* led, int pin);
 

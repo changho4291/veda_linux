@@ -1,6 +1,8 @@
 #ifndef __CONTROLLER_H__
 #define __CONTROLLER_H__
 
+#include <pthread.h>
+
 #include "cJSON.h"
 
 #include "httpserver.h"
@@ -13,6 +15,9 @@ typedef struct {
     HttpServer* sver;
     Led* led;
     YL40* yl40;
+    pthread_t thread;
+    pthread_mutex_t mutex;
+    int isThreadRun;
 } Controller;
 
 void controllerCreate(Controller* control, HttpServer* sv, Led* led, YL40* yl40);
@@ -23,7 +28,7 @@ void ledOff(int csock, HttpRequest* req, void* arg);
 
 void ledPwmSet(int csock, HttpRequest* req, void* arg);
 
-void ledCds(int csock, HttpRequest* req, void* arg);
+void ledMode(int csock, HttpRequest* req, void* arg);
 
 void ledSet(int csock, HttpRequest* req, void* arg);
 
