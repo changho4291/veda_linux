@@ -5,6 +5,7 @@
 
 #include "cJSON.h"
 
+#include "peripheral.h"
 #include "httpserver.h"
 #include "led.h"
 #include "yl40.h"
@@ -13,12 +14,12 @@
 
 typedef struct {
     HttpServer* sver;
-    Led* led;
-    YL40* yl40;
+    Led led;
+    YL40 yl40;
     pthread_t thread;
 } LedController;
 
-void ledControllerCreate(LedController* control, HttpServer* sv, Led* led, YL40* yl40);
+void ledControllerCreate(LedController* control, HttpServer* sv);
 
 void ledOn(int csock, HttpRequest* req, void* arg);
 

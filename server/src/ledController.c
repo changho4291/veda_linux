@@ -9,10 +9,11 @@ void ledModeSet(LedController* control, int mode);
 
 /** public **/
 
-void ledControllerCreate(LedController* control, HttpServer* sv, Led* led, YL40* yl40) {
+void ledControllerCreate(LedController* control, HttpServer* sv) {
     control->sver = sv;
-    control->led = led;
-    control->yl40 = yl40;
+
+    ledCreate(&control->led, LED1);
+    yl40Create(&control->yl40, I2C_NAME, I2C_1_ID);
 
     setGetApi(sv, "/led", ledGet, (void*)control);
     setGetApi(sv, "/cds", cdsGet, (void*)control);
@@ -29,14 +30,14 @@ void ledOn(int csock, HttpRequest* req, void* arg) {
     char respons[BUFSIZ];
 
     // led On 수행
-    ledOnOff(control->led, HIGH);
+    ledOnOff(&control->led, HIGH);
 
     // JSON 포멧으로 결과 작성(body)
     cJSON* root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", control->led->status);
-    cJSON_AddNumberToObject(root, "pwm", control->led->pwm);
-    cJSON_AddNumberToObject(root, "mode", control->led->mode);
+    cJSON_AddNumberToObject(root, "status", control->led.status);
+    cJSON_AddNumberToObject(root, "pwm", control->led.pwm);
+    cJSON_AddNumberToObject(root, "mode", control->led.mode);
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -57,14 +58,14 @@ void ledOff(int csock, HttpRequest* req, void* arg) {
     char respons[BUFSIZ];
 
     // led Off 수행
-    ledOnOff(control->led, LOW);
+    ledOnOff(&control->led, LOW);
 
     // JSON 포멧으로 결과 작성(body)
     cJSON* root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
-    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
-    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(&control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(&control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(&control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -88,16 +89,16 @@ void ledPwmSet(int csock, HttpRequest* req, void* arg) {
     cJSON* root = cJSON_Parse(req->body);
     cJSON* pwm = cJSON_GetObjectItem(root, "pwm");
     
-    ledPwm(control->led, pwm->valueint);
+    ledPwm(&control->led, pwm->valueint);
     
     cJSON_Delete(root);
     
     // JSON 포멧으로 결과 작성(body)
     root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
-    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
-    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(&control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(&control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(&control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -128,9 +129,9 @@ void ledMode(int csock, HttpRequest* req, void* arg) {
     // JSON 포멧으로 결과 작성(body)
     root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
-    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
-    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(&control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(&control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(&control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -156,8 +157,8 @@ void ledSet(int csock, HttpRequest* req, void* arg) {
     cJSON* pwm = cJSON_GetObjectItem(root, "pwm");
     cJSON* mode = cJSON_GetObjectItem(root, "mode");
     
-    ledOnOff(control->led, status->valueint);
-    ledPwm(control->led, pwm->valueint);
+    ledOnOff(&control->led, status->valueint);
+    ledPwm(&control->led, pwm->valueint);
     ledModeSet(control, mode->valueint);
 
     cJSON_Delete(root);
@@ -165,9 +166,9 @@ void ledSet(int csock, HttpRequest* req, void* arg) {
     // JSON 포멧으로 결과 작성(body)
     root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
-    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
-    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(&control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(&control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(&control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -190,9 +191,9 @@ void ledGet(int csock, HttpRequest* req, void* arg) {
     // JSON 포멧으로 결과 작성(body)
     cJSON* root = cJSON_CreateObject();
 
-    cJSON_AddNumberToObject(root, "status", ledGetStatus(control->led));
-    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(control->led));
-    cJSON_AddNumberToObject(root, "mode", ledGetMode(control->led));
+    cJSON_AddNumberToObject(root, "status", ledGetStatus(&control->led));
+    cJSON_AddNumberToObject(root, "pwm", ledGetPwm(&control->led));
+    cJSON_AddNumberToObject(root, "mode", ledGetMode(&control->led));
 
     char* body = cJSON_PrintUnformatted(root);
 
@@ -213,7 +214,7 @@ void cdsGet(int csock, HttpRequest* req, void* arg) {
     char respons[BUFSIZ];
 
     // YL40으로부터
-    int cds = getCds(control->yl40);
+    int cds = getCds(&control->yl40);
 
     // 결과 값 생성
     cJSON* root = cJSON_CreateObject();
@@ -237,13 +238,13 @@ void ledModeSet(LedController* control, int mode) {
     switch (mode) {
     case 0: // 일반 모드
         // 실행중인 thread가 있다면 종료
-        ledSetMode(control->led, 0);
+        ledSetMode(&control->led, 0);
         break;
 
     case 1: // CDS 연동 모드
-        if (ledGetMode(control->led)) { break; }
+        if (ledGetMode(&control->led)) { break; }
 
-        ledSetMode(control->led, 1);
+        ledSetMode(&control->led, 1);
 
         pthread_create(&control->thread, NULL, _ledCdsModeThread, control);
         pthread_detach(control->thread);
@@ -257,10 +258,10 @@ void ledModeSet(LedController* control, int mode) {
 void* _ledCdsModeThread(void* arg) {
     LedController* control = (LedController*) arg;
 
-    while (ledGetMode(control->led)) {
+    while (ledGetMode(&control->led)) {
 
-        int cdsValue = getCds(control->yl40);
-        ledPwm(control->led, (cdsValue * 100) / 255);
+        int cdsValue = getCds(&control->yl40);
+        ledPwm(&control->led, (cdsValue * 100) / 255);
 
         delay(500);
     }

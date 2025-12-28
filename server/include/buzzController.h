@@ -6,19 +6,19 @@
 
 #include "cJSON.h"
 
+#include "peripheral.h"
 #include "httpserver.h"
 #include "fnd.h"
 #include "buzz.h"
 
 typedef struct {
     HttpServer* sver;
-    Fnd* fnd;
-    Buzz* buzz;
+    Fnd fnd;
+    Buzz buzz;
     pthread_t thread;
 } BuzzController;
 
-void buzzControllerCreate(BuzzController* control, HttpServer* sv
-    , Fnd* fnd, Buzz* buzz);
+void buzzControllerCreate(BuzzController* control, HttpServer* sv);
 
 void fndSet(int csock, HttpRequest* req, void* arg);
 
