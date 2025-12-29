@@ -58,13 +58,13 @@ cmake --build .
 ```
 
 실행 방법은 다음과 같습니다.
-```
+``` shell
 ./mini_server mini_server
 ```
 
 데몬으로 실행되기 때문에 프로세스를 종료하기 위해서 아래와 같은 방법을 사용하고 있습니다.
-```
-pgrep -f veda_mini_project    # 프로세스 id 획득
+``` shell
+pgrep -f mini_server    # 프로세스 id 획득
 kill -9 [프로세스id]
 ```
 
@@ -112,7 +112,7 @@ cmake --build .
 ```
 
 실행 방법은 다음과 같습니다.
-```
+``` shell
 ./mini_client <ip> <port>
 ```
 

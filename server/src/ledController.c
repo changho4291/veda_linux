@@ -1,6 +1,9 @@
 
 #include "ledController.h"
 
+/* dlopen 기반 런타임 바인딩(함수 호출은 매크로로 우회) */
+#include "dynload_cjson.h"
+
 /** private functions **/
 
 void* _ledCdsModeThread(void* arg);

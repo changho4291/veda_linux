@@ -1,5 +1,8 @@
 #include "buzzController.h"
 
+/* dlopen 기반 런타임 바인딩(함수 호출은 매크로로 우회) */
+#include "dynload_cjson.h"
+
 void _setFndAlarm(BuzzController* control, int num);
 void* _fndAlarmThread(void* arg);
 

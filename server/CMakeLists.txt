@@ -1,5 +1,9 @@
 # root
-set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+# 기본은 aarch64 크로스 컴파일러를 사용하되, 외부에서 -DCMAKE_C_COMPILER로
+# 지정한 경우에는 이를 존중한다.
+if(NOT DEFINED CMAKE_C_COMPILER)
+    set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+endif()
 
 cmake_minimum_required(VERSION 3.14)
 project(mini_server)
@@ -14,7 +18,15 @@ add_subdirectory(third_party/cjson)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE http indicators data_structure sensors cjson dl wiringPi)
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/third_party/cjson
+)
+
+## Runtime load libraries via dlopen/dlsym (see src/dynload.c)
+## Keep only the minimum link-time dependencies here.
+target_link_libraries(${PROJECT_NAME} PRIVATE dl wiringPi pthread)
 
 install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION bin)
