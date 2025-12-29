@@ -3,24 +3,69 @@
 #define HTTP_PORT 60000
 
 //--- private funcs ---
+
+/**
+ * @brief 서버 스레드 실제 구현체
+ * 
+ * @param sv 
+ * @return void* 
+ */
 void* _serverStart(void* sv);
+
+/**
+ * @brief HTTP 파서
+ * 
+ * @param sv 
+ * @param buf   HTTP 수신 패킷
+ * @param csock 클라이언트 소켓
+ */
 void parseHttp(HttpServer* sv, char* buf, int csock);
+
+/**
+ * @brief 클라이언트 연결 스레드 구현체
+ * 
+ * @param arg 
+ * @return void*
+ */
 void* _clnt_connection(void *arg);
+
+/**
+ * @brief 에러 요청 처리
+ * 
+ * @param csock 
+ */
 void sendError(int csock);
+
+/**
+ * @brief epoll 과 소켓 초기화
+ * 
+ * @param efd epoll fd
+ * @param fd  소켓 fd
+ */
 void cleanup(int efd, int fd);
+
+/**
+ * @brief LinkedList 탐색 로직
+ * 
+ * @param findData 찾을 데이터
+ * @param nodeData 비교 데이터
+ * @return int 0: 불일치    1: 일치
+ */
 int apiSearch(void* findData, void* nodeData);
 
 //--- public ---
 
 int serverCreate(HttpServer* server) {
+    // http method 컨테이너 초기화
     server->getApi = (LinkedList*)malloc(sizeof(LinkedList));
     server->postApi = (LinkedList*)malloc(sizeof(LinkedList));
     server->deleteApi = (LinkedList*)malloc(sizeof(LinkedList));
 
-    linkedListCreate(server->getApi, 20);
-    linkedListCreate(server->postApi, 20);
-    linkedListCreate(server->deleteApi, 20);
+    linkedListCreate(&server->getApi, 20);
+    linkedListCreate(&server->postApi, 20);
+    linkedListCreate(&server->deleteApi, 20);
 
+    // tcp 소켓 생성
     server->sock = socket(AF_INET, SOCK_STREAM, 0);
     if(server->sock == -1) {
         perror("socket()");

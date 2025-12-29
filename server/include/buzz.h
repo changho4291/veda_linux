@@ -10,10 +10,10 @@
  * 
  */
 typedef struct {
-    int pin;
-    int isPlay;
-    int stop;
-    pthread_mutex_t mutex;
+    int pin;                // buzzer pin
+    int isPlay;             // 부저 사용 플래그
+    int stop;               // 부저 중단 플래그
+    pthread_mutex_t mutex;  // 부저 전용 뮤텍스
 } Buzz;
 
 /**

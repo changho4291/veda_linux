@@ -14,9 +14,11 @@ void* _musicThread(void* arg);
 void buzzControllerCreate(BuzzController* control, HttpServer* sv) {
     control->sver = sv;
 
+    // 인디케이터 값 초기화
     fndCreate(&control->fnd, FND_A, FND_B, FND_C, FND_D);
     buzzCreate(&control->buzz , BUZZ);
 
+    // HTTP RESTful API 설정
     setPostApi(sv, "/fnd", fndSet, (void*)control);
     setDeleteApi(sv, "/fnd", fndDelete, (void*)control);
 

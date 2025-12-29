@@ -34,6 +34,8 @@ void fndDestroy(Fnd* fnd) {
 }
 
 void fndControl(Fnd* fnd, int num) {
+    // num 값이 0보다 작으면 0으로 
+    // 9보다 크면 9로 설정
     pthread_mutex_lock(&fnd->mutex);
     if (num < 0) {
         fnd->num = 0;
@@ -44,6 +46,7 @@ void fndControl(Fnd* fnd, int num) {
     }
     pthread_mutex_unlock(&fnd->mutex);
 
+    // 입력된 값에 맞춰 FND 제어
     for (int i = 0; i < 4; i++) {
         digitalWrite(fnd->pins[i], fndNumber[num][i] ? HIGH : LOW);
     }

@@ -6,8 +6,20 @@
 
 /** private functions **/
 
+/**
+ * @brief LED CDS MODE를 실행하기 위한 스레드
+ * 
+ * @param arg LedController*
+ * @return void* 
+ */
 void* _ledCdsModeThread(void* arg);
 
+/**
+ * @brief LED 작동 모드 설정
+ * 
+ * @param control 
+ * @param mode      0: PWM 수동 조작 1: PWM CDS 연동
+ */
 void ledModeSet(LedController* control, int mode);
 
 /** public **/
@@ -15,9 +27,11 @@ void ledModeSet(LedController* control, int mode);
 void ledControllerCreate(LedController* control, HttpServer* sv) {
     control->sver = sv;
 
+    // 인디케이터 및 센서값 초기화
     ledCreate(&control->led, LED1);
     yl40Create(&control->yl40, I2C_NAME, I2C_1_ID);
 
+    // HTTP RESTful API 설정
     setGetApi(sv, "/led", ledGet, (void*)control);
     setGetApi(sv, "/cds", cdsGet, (void*)control);
 
@@ -262,7 +276,7 @@ void* _ledCdsModeThread(void* arg) {
     LedController* control = (LedController*) arg;
 
     while (ledGetMode(&control->led)) {
-
+        // CDS 값 0 - 255 를 PWM의 0 - 100 으로 맞춤
         int cdsValue = getCds(&control->yl40);
         ledPwm(&control->led, (cdsValue * 100) / 255);
 
