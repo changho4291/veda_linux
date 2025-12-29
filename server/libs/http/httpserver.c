@@ -61,9 +61,9 @@ int serverCreate(HttpServer* server) {
     server->postApi = (LinkedList*)malloc(sizeof(LinkedList));
     server->deleteApi = (LinkedList*)malloc(sizeof(LinkedList));
 
-    linkedListCreate(&server->getApi, 20);
-    linkedListCreate(&server->postApi, 20);
-    linkedListCreate(&server->deleteApi, 20);
+    linkedListCreate(server->getApi, 20);
+    linkedListCreate(server->postApi, 20);
+    linkedListCreate(server->deleteApi, 20);
 
     // tcp 소켓 생성
     server->sock = socket(AF_INET, SOCK_STREAM, 0);
