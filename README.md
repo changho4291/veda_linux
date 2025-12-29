@@ -9,6 +9,8 @@
 ├── include
 │   ├── buzzController.h
 │   ├── buzz.h
+│   ├── dynload_cjson.h
+│   ├── dynload.h
 │   ├── fnd.h
 │   ├── httpobject.h
 │   ├── httpserver.h
@@ -34,6 +36,7 @@
 │       └── yl40.c
 ├── src
 │   ├── buzzController.c
+│   ├── dynload.c
 │   ├── ledController.c
 │   └── main.c
 └── third_party
@@ -55,6 +58,11 @@ cd build
 
 cmake ..
 cmake --build .
+
+# 크로스 환경에서는 --prefix <경로>가 달라도 되지만
+# 라즈베리파이 환경에서 실행하기 위해서는 반드시 /home/veda/veda_test/ 폴더에 
+# server 구성 파일이 있어야 합니다.
+sudo cmake --install . --prefix /home/veda/veda_test/
 ```
 
 실행 방법은 다음과 같습니다.

@@ -87,31 +87,31 @@ static int _bind_sym(void* h, const char* sym, void** out) {
 }
 
 int dynload_init(void) {
-    g_h_data_structure = dlopen("/usr/veda/libs/libdata_structure.so", RTLD_LAZY);
+    g_h_data_structure = dlopen("/home/veda/veda_test/libs/libdata_structure.so", RTLD_LAZY);
     if (!g_h_data_structure) {
         fprintf(stderr, "dlopen failed: libdata_structure.so: %s\n", dlerror());
         return -1;
     }
-    g_h_indicators = dlopen("/usr/veda/libs/libindicators.so", RTLD_LAZY);
+    g_h_indicators = dlopen("/home/veda/veda_test/libindicators.so", RTLD_LAZY);
     if (!g_h_indicators) {
         fprintf(stderr, "dlopen failed: libindicators.so: %s\n", dlerror());
         return -1;
     }
-    g_h_sensors = dlopen("/usr/veda/libs/libsensors.so", RTLD_LAZY);
+    g_h_sensors = dlopen("/home/veda/veda_test/libsensors.so", RTLD_LAZY);
     if (!g_h_sensors) {
         fprintf(stderr, "dlopen failed: libsensors.so: %s\n", dlerror());
         return -1;
     }
-    g_h_cjson = dlopen("/usr/veda/libs/libcjson.so", RTLD_LAZY);
+    g_h_cjson = dlopen("/home/veda/veda_test/libcjson.so", RTLD_LAZY);
     if (!g_h_cjson) {
         /* 일부 배포환경에서는 SONAME(libcjson.so.1)만 존재할 수 있음 */
-        g_h_cjson = dlopen("/usr/veda/libs/libcjson.so.1", RTLD_LAZY);
+        g_h_cjson = dlopen("/home/veda/veda_test/libcjson.so.1", RTLD_LAZY);
     }
     if (!g_h_cjson) {
         fprintf(stderr, "dlopen failed: libcjson.so: %s\n", dlerror());
         return -1;
     }
-    g_h_http = dlopen("/usr/veda/libs/libhttp.so", RTLD_LAZY);
+    g_h_http = dlopen("/home/veda/veda_test/libhttp.so", RTLD_LAZY);
     if (!g_h_http) {
         fprintf(stderr, "dlopen failed: libhttp.so: %s\n", dlerror());
         return -1;
