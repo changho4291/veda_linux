@@ -91,15 +91,15 @@ void sendLedOff(char** arglist, const char* host, int port) {
 }
 
 void sendLedPwm(char** arglist, const char* host, int port) {
-    int sock = connect_tcp(host, port);
-    int numbytes;
-
     if (arglist[1] == NULL) {
-        printf("0 부터 100 까지의 인자를 입력해 주세요\n"
+    printf("0 부터 100 까지의 인자를 입력해 주세요\n"
         "예: led-pwm 100\n");
         return;
     }
-
+    
+    int sock = connect_tcp(host, port);
+    int numbytes;
+        
     char request[1024];
     char respons[1024];
 
@@ -127,15 +127,15 @@ void sendLedPwm(char** arglist, const char* host, int port) {
 }
 
 void sendLedMode(char** arglist, const char* host, int port) {
-    int sock = connect_tcp(host, port);
-    int numbytes;
-
     if (arglist[1] == NULL) {
-        printf("0 또는 1을 입력해주세요\n"
+    printf("0 또는 1을 입력해주세요\n"
         "예: led-mode 1\n");
         return;
     }
-
+    
+    int sock = connect_tcp(host, port);
+    int numbytes;
+        
     char request[1024];
     char respons[1024];
 
@@ -186,14 +186,14 @@ void sendGetCds(char** arglist, const char* host, int port) {
 }
 
 void sendAlarmSet(char** arglist, const char* host, int port) {
-    int sock = connect_tcp(host, port);
-    int numbytes;
-
     if (arglist[1] == NULL) {
-        printf("0 부터 9 까지의 인자를 입력해 주세요\n"
+    printf("0 부터 9 까지의 인자를 입력해 주세요\n"
         "예: alaram-set 9\n");
         return;
     }
+    
+    int sock = connect_tcp(host, port);
+    int numbytes;
 
     char request[1024];
     char respons[1024];

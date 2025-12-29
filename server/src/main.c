@@ -80,18 +80,19 @@ int main(int argc, char const *argv[]) {
 
     /* 이 아래부터 데몬 프로세스로 해야 할 일 */
 
-    HttpServer server;
+    HttpServer server;  // HTTP 서버 구현을 위한 구조체
+    LedController ledControl;   // led 관련 기능 제어 구조체
+    BuzzController buzzControl; // buzz 관련 기능 제어 구조체
     
-    LedController ledControl;
-    BuzzController buzzControl;
+    wiringPiSetup();    //gpio 제어 허용
     
-    wiringPiSetup();
-    
-    serverCreate(&server);
+    serverCreate(&server);  // 서버 구조체 초기화(생성자)
 
+    // 각 컨트롤 (구현부) 초기화 (생성자)
     ledControllerCreate(&ledControl, &server);
     buzzControllerCreate(&buzzControl, &server);
 
+    // http 서버 스레드 실행
     serverStart(&server);
     serverJoin(&server);
 
