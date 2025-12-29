@@ -228,7 +228,7 @@ void sendAlarmCancle(char** arglist, const char* host, int port) {
     char request[1024];
     char respons[1024];
 
-    sprintf(request, "DELETE /cds HTTP/1.1\r\n"
+    sprintf(request, "DELETE /fnd HTTP/1.1\r\n"
     "User-Agent: simple-c-client/1.0\r\n"
     "Connection: close\r\n"
     "Host: %s:%d\r\n\r\n", host, port);

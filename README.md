@@ -1,5 +1,7 @@
 # VEDA 3기 linux mini project 과제
 
+`github: https://github.com/changho4291/veda_linux.git`
+
 ## 1. 서버
 
 ### 1-1. 구성
@@ -62,12 +64,15 @@ cmake --build .
 # 크로스 환경에서는 --prefix <경로>가 달라도 되지만
 # 라즈베리파이 환경에서 실행하기 위해서는 반드시 /home/veda/veda_test/ 폴더에 
 # server 구성 파일이 있어야 합니다.
-sudo cmake --install . --prefix /home/veda/veda_test/
+cmake --install . --prefix /home/veda/veda_test/
+
+# 아래 명령으로 크로스 컴파일된 프로젝트를 이동시킬 수 있습니다.
+scp -r ./veda_test/ veda@192.168.0.51:/home/veda
 ```
 
 실행 방법은 다음과 같습니다.
 ``` shell
-./mini_server mini_server
+./mini_server
 ```
 
 데몬으로 실행되기 때문에 프로세스를 종료하기 위해서 아래와 같은 방법을 사용하고 있습니다.
@@ -120,6 +125,7 @@ cmake --build .
 ```
 
 실행 방법은 다음과 같습니다.
+현재 프로젝트에서 서버의 포트번호는 60000 으로 고정되어 있습니다.
 ``` shell
 ./mini_client <ip> <port>
 ```
