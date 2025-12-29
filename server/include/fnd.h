@@ -4,12 +4,15 @@
 #include <pthread.h>
 #include <wiringPi.h>
 
+/**
+ * @brief Fnd 객체
+ * 
+ */
 typedef struct {
-    int pins[4];
-    int num;
-    pthread_mutex_t mutex;
+    int pins[4];    // FND 7447 
+    int num;        // FND 카운트 NUM
+    pthread_mutex_t mutex;  // FND 뮤택스
 } Fnd;
-
 
 void fndCreate(Fnd* fnd, int a, int b, int c, int d);
 

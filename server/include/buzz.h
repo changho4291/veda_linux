@@ -5,6 +5,10 @@
 #include <wiringPi.h>
 #include <softTone.h>
 
+/**
+ * @brief Buzz 객체
+ * 
+ */
 typedef struct {
     int pin;
     int isPlay;
@@ -12,14 +16,40 @@ typedef struct {
     pthread_mutex_t mutex;
 } Buzz;
 
-void buzzCreate(Buzz* fnd, int pin);
+/**
+ * @brief Buzz 생성자
+ * 
+ * @param buzz  Buzz 초기화 구조체
+ * @param pin   부저가 사용할 GPIO 핀 번호
+ */
+void buzzCreate(Buzz* buzz, int pin);
 
-void buzzDestroy(Buzz* fnd);
+/**
+ * @brief Buzz 소멸자
+ * 
+ * @param buzz Buzz 객체
+ */
+void buzzDestroy(Buzz* buzz);
 
-void buzzPlay(Buzz* fnd);
+/**
+ * @brief 부저 실행
+ * 
+ * @param buzz Buzz 객체
+ */
+void buzzPlay(Buzz* buzz);
 
-int buzzGetIsPlay(Buzz* fnd);
+/**
+ * @brief 부저 실행중 확인
+ * 
+ * @param buzz Buzz 객체
+ */
+int buzzGetIsPlay(Buzz* buzz);
 
-void buzzPlayStop(Buzz* fnd);
+/**
+ * @brief 부저 실행 중단
+ * 
+ * @param buzz Buzz 객체
+ */
+void buzzPlayStop(Buzz* buzz);
 
 #endif // __BUZZ_H__
